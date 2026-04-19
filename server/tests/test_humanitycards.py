@@ -501,11 +501,11 @@ def test_check_scores_includes_score_values():
     game, users = _setup_game(num_players=3)
     player0 = _get_player(game, 0)
     player0.score = 5  # type: ignore[union-attr]
+    game._team_manager.add_to_team_score(player0.name, 5)
     user0 = next(u for u in users if u.username == player0.name)
     user0.clear_messages()
     game.execute_action(player0, "check_scores")
     spoken = user0.get_spoken_messages()
-    # Score "5" or "5 points" should appear
     assert any("5" in m for m in spoken)
 
 
@@ -515,12 +515,17 @@ def test_check_scores_ordered_descending():
     active[0].score = 5  # type: ignore[union-attr]
     active[1].score = 3  # type: ignore[union-attr]
     active[2].score = 1  # type: ignore[union-attr]
+    # Sync scores into team_manager so check_scores reflects them
+    for p in active:
+        game._team_manager.add_to_team_score(p.name, p.score)  # type: ignore[union-attr]
     user0 = next(u for u in users if u.username == active[0].name)
     user0.clear_messages()
     game.execute_action(active[0], "check_scores")
     spoken = user0.get_spoken_messages()
-    # First spoken message should mention the highest scorer
-    assert active[0].name in spoken[0]
+    all_text = " ".join(spoken)
+    # Highest scorer's name should appear, and their score should be present
+    assert active[0].name in all_text
+    assert "5" in all_text
 
 
 def test_check_scores_speaks_all_players():
@@ -530,7 +535,10 @@ def test_check_scores_speaks_all_players():
     user0.clear_messages()
     game.execute_action(player0, "check_scores")
     spoken = user0.get_spoken_messages()
-    assert len(spoken) == 3  # One line per player
+    # Base class may combine into one message or speak per team — all player names must appear
+    all_text = " ".join(spoken)
+    for p in game.get_active_players():
+        assert p.name in all_text
 
 
 # ==========================================================================

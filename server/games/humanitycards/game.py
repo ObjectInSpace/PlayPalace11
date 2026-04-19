@@ -1125,6 +1125,7 @@ class HumanityCardsGame(Game):
                 continue
             hcp: HumanityCardsPlayer = player  # type: ignore
             hcp.score += points
+            self._team_manager.add_to_team_score(player.name, points)
             sub = next((s for s in self.submissions if s["player_id"] == player_id), None)
             text = self._fill_in_blanks(
                 self.current_black_card["text"] if self.current_black_card else "",
@@ -1234,37 +1235,6 @@ class HumanityCardsGame(Game):
             user.speak_l("hc-select-cards-first")
 
     # ==========================================================================
-    # Score overrides (CAH uses player.score, not team_manager)
-    # ==========================================================================
-
-    def _is_check_scores_enabled(self, player: Player) -> str | None:
-        if self.status != "playing":
-            return "action-not-playing"
-        return None
-
-    def _is_check_scores_detailed_enabled(self, player: Player) -> str | None:
-        if self.status != "playing":
-            return "action-not-playing"
-        return None
-
-    def _action_check_scores(self, player: Player, action_id: str) -> None:
-        user = self.get_user(player)
-        if not user:
-            return
-        for p in sorted(self.get_active_players(), key=lambda p: p.score, reverse=True):  # type: ignore
-            user.speak_l("hc-score-line", player=p.name, score=p.score)  # type: ignore
-
-    def _action_check_scores_detailed(self, player: Player, action_id: str) -> None:
-        user = self.get_user(player)
-        if not user:
-            return
-        lines = [
-            Localization.get(user.locale, "hc-score-line", player=p.name, score=p.score)  # type: ignore
-            for p in sorted(self.get_active_players(), key=lambda p: p.score, reverse=True)  # type: ignore
-        ]
-        self.status_box(player, lines)
-
-    # ==========================================================================
     # Game lifecycle
     # ==========================================================================
 
@@ -1280,6 +1250,10 @@ class HumanityCardsGame(Game):
         self._build_decks()
 
         active_players = self.get_active_players()
+
+        # Set up individual teams for score tracking (S / Shift+S)
+        self._team_manager.team_mode = "individual"
+        self._team_manager.setup_teams([p.name for p in active_players])
 
         # Check we have enough cards
         total_whites_needed = len(active_players) * self.options.hand_size
