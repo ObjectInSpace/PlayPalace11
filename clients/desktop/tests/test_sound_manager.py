@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 import sound_manager as sm_mod
@@ -45,7 +47,30 @@ def test_default_sounds_folder_is_absolute():
     manager = SoundManager()
 
     assert manager.sounds_folder.endswith("sounds")
-    assert manager.sounds_folder.startswith("/")
+    assert os.path.isabs(manager.sounds_folder)
+
+
+def test_default_sounds_folder_uses_pyinstaller_meipass(monkeypatch, tmp_path):
+    bundle_root = tmp_path / "bundle"
+    executable = tmp_path / "PlayPalace.app" / "Contents" / "MacOS" / "PlayPalace"
+
+    monkeypatch.setattr(sm_mod.sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sm_mod.sys, "_MEIPASS", str(bundle_root), raising=False)
+    monkeypatch.setattr(sm_mod.sys, "executable", str(executable))
+
+    assert sm_mod._default_sounds_folder() == str(bundle_root / "sounds")
+
+
+def test_default_sounds_folder_uses_frozen_executable_without_meipass(
+    monkeypatch, tmp_path
+):
+    executable = tmp_path / "PlayPalace.app" / "Contents" / "MacOS" / "PlayPalace"
+
+    monkeypatch.setattr(sm_mod.sys, "frozen", True, raising=False)
+    monkeypatch.delattr(sm_mod.sys, "_MEIPASS", raising=False)
+    monkeypatch.setattr(sm_mod.sys, "executable", str(executable))
+
+    assert sm_mod._default_sounds_folder() == str(executable.parent / "sounds")
 
 
 def test_play_passes_full_path(tmp_path):

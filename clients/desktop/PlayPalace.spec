@@ -1,18 +1,14 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-import shutil
-from pathlib import Path
-
-
 a = Analysis(
     ['client.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('sounds', 'sounds')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=['pyinstaller_runtime.py'],
+    runtime_hooks=[],
     excludes=[],
     noarchive=False,
     optimize=0,
@@ -51,9 +47,3 @@ app = BUNDLE(
     icon=None,
     bundle_identifier=None,
 )
-
-source_sounds = Path('sounds')
-bundle_sounds = Path(DISTPATH) / 'PlayPalace.app' / 'Contents' / 'MacOS' / 'sounds'
-if source_sounds.exists():
-    shutil.rmtree(bundle_sounds, ignore_errors=True)
-    shutil.copytree(source_sounds, bundle_sounds)
