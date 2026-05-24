@@ -52,6 +52,7 @@ def test_default_sounds_folder_is_absolute():
 
 def test_default_sounds_folder_uses_pyinstaller_meipass(monkeypatch, tmp_path):
     bundle_root = tmp_path / "bundle"
+    (bundle_root / "sounds").mkdir(parents=True)
     executable = tmp_path / "PlayPalace.app" / "Contents" / "MacOS" / "PlayPalace"
 
     monkeypatch.setattr(sm_mod.sys, "frozen", True, raising=False)
@@ -59,6 +60,20 @@ def test_default_sounds_folder_uses_pyinstaller_meipass(monkeypatch, tmp_path):
     monkeypatch.setattr(sm_mod.sys, "executable", str(executable))
 
     assert sm_mod._default_sounds_folder() == str(bundle_root / "sounds")
+
+
+def test_default_sounds_folder_falls_back_when_meipass_sounds_missing(
+    monkeypatch, tmp_path
+):
+    bundle_root = tmp_path / "_internal"
+    bundle_root.mkdir()
+    executable = tmp_path / "PlayPalace" / "PlayPalace.exe"
+
+    monkeypatch.setattr(sm_mod.sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sm_mod.sys, "_MEIPASS", str(bundle_root), raising=False)
+    monkeypatch.setattr(sm_mod.sys, "executable", str(executable))
+
+    assert sm_mod._default_sounds_folder() == str(executable.parent / "sounds")
 
 
 def test_default_sounds_folder_uses_frozen_executable_without_meipass(

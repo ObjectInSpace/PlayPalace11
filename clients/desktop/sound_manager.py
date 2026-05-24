@@ -16,7 +16,9 @@ def _default_sounds_folder() -> str:
     if getattr(sys, "frozen", False):
         bundle_root = getattr(sys, "_MEIPASS", None)
         if bundle_root:
-            return str(Path(bundle_root) / "sounds")
+            candidate = Path(bundle_root) / "sounds"
+            if candidate.is_dir():
+                return str(candidate)
         return str(Path(sys.executable).resolve().parent / "sounds")
     return str(Path(__file__).resolve().parent / "sounds")
 
